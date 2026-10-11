@@ -4,6 +4,10 @@ name: security
 on:
   workflow_call:
     inputs:
+      gitleaks:
+        description: Run gitleaks. Set false in repos that already scan for secrets (for example via chiibitsu/gates).
+        type: boolean
+        default: true
       codeql:
         description: Run CodeQL. Public repos only, private repos need GitHub Advanced Security.
         type: boolean
@@ -23,15 +27,18 @@ permissions:
 jobs:
   secrets:
     name: secrets (gitleaks)
+    if: ${{ inputs.gitleaks }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
           persist-credentials: false
       - name: Install gitleaks
         run: |
-          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz | tar -xz gitleaks
+          curl -sSfL -o gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz
+          echo "ba6dbb656933921c775ee5a2d1c13a91046e7952e9d919f9bac4cec61d628e7d  gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf gitleaks.tar.gz gitleaks
       - name: Scan
         env:
           EVENT: ${{ github.event_name }}
@@ -48,7 +55,7 @@ jobs:
     name: dependencies (npm audit)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
       - name: Audit
@@ -70,7 +77,7 @@ jobs:
       security-events: write
       actions: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
       - name: Validate languages
@@ -83,7 +90,7 @@ jobs:
               *) echo "Unsupported CodeQL language '$l'. Only buildless languages are supported here."; exit 1 ;;
             esac
           done
-      - uses: github/codeql-action/init@v3
+      - uses: github/codeql-action/init@9f759ee644a3e7c15c1390abf49868036c00067b # v3.38.3
         with:
           languages: ${{ inputs.codeql-languages }}
-      - uses: github/codeql-action/analyze@v3
+      - uses: github/codeql-action/analyze@9f759ee644a3e7c15c1390abf49868036c00067b # v3.38.3
