@@ -11,4 +11,9 @@ Shared security checks for Chiibitsu repos. One workflow, called from each repo.
 Pin `uses:` to a commit SHA of this repo, never `@main`: every `uses:` line must be a SHA, the same rule `chiibitsu/gates` enforces. Copy `templates/caller.yml` to `.github/workflows/security.yml` in the target repo.
 
 ## Update
-Change the checks here. Every caller picks it up on its next run.
+Change the checks here, merge, then bump the pin in each caller. Callers pin a commit SHA, so a change here does **not** reach them until their pin moves:
+
+- Repos with Renovate: its `github-actions` manager opens a PR bumping the `uses:` SHA when this repo changes.
+- Repos without Renovate: replace the SHA in `.github/workflows/security.yml` by hand with the new `main` commit.
+
+Security fixes are not applied to a caller until its pin is bumped.
