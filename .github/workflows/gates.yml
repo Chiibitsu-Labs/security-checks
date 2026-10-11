@@ -1,0 +1,9 @@
+name: gates
+on: [pull_request, push]
+permissions:
+  contents: read
+jobs:
+  gates:
+    uses: chiibitsu/gates/.github/workflows/gates.yml@a0437c53f3b762aba2bbd0accec1bae6183b4012 # v1.2.1
+    with:
+      gates_ref: a0437c53f3b762aba2bbd0accec1bae6183b4012 # v1.2.1
