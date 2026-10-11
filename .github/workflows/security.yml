@@ -1,0 +1,89 @@
+name: security
+
+# Reusable workflow. Call it from a repo with templates/caller.yml.
+on:
+  workflow_call:
+    inputs:
+      codeql:
+        description: Run CodeQL. Public repos only, private repos need GitHub Advanced Security.
+        type: boolean
+        default: false
+      codeql-languages:
+        description: CodeQL languages, comma separated. Buildless languages only (javascript-typescript, python, ruby, actions).
+        type: string
+        default: javascript-typescript
+      audit-level:
+        description: npm audit fails at this severity or higher.
+        type: string
+        default: high
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: secrets (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install gitleaks
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz | tar -xz gitleaks
+      - name: Scan
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT" = "pull_request" ]; then
+            ./gitleaks detect --source . --redact --verbose --log-opts "$BASE..$HEAD"
+          else
+            ./gitleaks detect --source . --redact --verbose
+          fi
+
+  deps:
+    name: dependencies (npm audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Audit
+        env:
+          LEVEL: ${{ inputs.audit-level }}
+        run: |
+          if [ -f package-lock.json ]; then
+            npm audit --omit=dev --audit-level="$LEVEL"
+          else
+            echo "No package-lock.json, skipping."
+          fi
+
+  codeql:
+    name: code (CodeQL)
+    if: ${{ inputs.codeql }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate languages
+        env:
+          LANGS: ${{ inputs.codeql-languages }}
+        run: |
+          for l in ${LANGS//,/ }; do
+            case "$l" in
+              javascript-typescript|javascript|typescript|python|ruby|actions) ;;
+              *) echo "Unsupported CodeQL language '$l'. Only buildless languages are supported here."; exit 1 ;;
+            esac
+          done
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ inputs.codeql-languages }}
+      - uses: github/codeql-action/analyze@v3
