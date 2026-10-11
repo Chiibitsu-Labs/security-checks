@@ -76,4 +76,5 @@ jobs:
       - uses: github/codeql-action/init@v3
         with:
           languages: ${{ inputs.codeql-languages }}
+      - uses: github/codeql-action/autobuild@v3
       - uses: github/codeql-action/analyze@v3
