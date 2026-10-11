@@ -9,7 +9,7 @@ on:
         type: boolean
         default: false
       codeql-languages:
-        description: CodeQL languages, comma separated.
+        description: CodeQL languages, comma separated. Buildless languages only (javascript-typescript, python, ruby, actions).
         type: string
         default: javascript-typescript
       audit-level:
@@ -73,8 +73,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Validate languages
+        env:
+          LANGS: ${{ inputs.codeql-languages }}
+        run: |
+          for l in ${LANGS//,/ }; do
+            case "$l" in
+              javascript-typescript|javascript|typescript|python|ruby|actions) ;;
+              *) echo "Unsupported CodeQL language '$l'. Only buildless languages are supported here."; exit 1 ;;
+            esac
+          done
       - uses: github/codeql-action/init@v3
         with:
           languages: ${{ inputs.codeql-languages }}
-      - uses: github/codeql-action/autobuild@v3
       - uses: github/codeql-action/analyze@v3
