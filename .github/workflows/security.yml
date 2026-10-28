@@ -8,6 +8,10 @@ on:
         description: Run gitleaks. Set false in repos that already scan for secrets (for example via chiibitsu/gates).
         type: boolean
         default: true
+      semgrep:
+        description: Run the semgrep code scan. Free on private repos too, unlike CodeQL.
+        type: boolean
+        default: true
       codeql:
         description: Run CodeQL. Public repos only, private repos need GitHub Advanced Security.
         type: boolean
@@ -61,12 +65,36 @@ jobs:
       - name: Audit
         env:
           LEVEL: ${{ inputs.audit-level }}
+        # Production and dev dependencies both: a compromised dev dependency runs in CI and
+        # on the builder's machine (Chii, 2026-10-26). A package.json with no lockfile is
+        # red, not skipped: npm audit cannot read pnpm or yarn lockfiles, and a skip there
+        # would be a green check that checked nothing.
         run: |
-          if [ -f package-lock.json ]; then
-            npm audit --omit=dev --audit-level="$LEVEL"
+          if [ ! -f package.json ]; then
+            echo "Not applicable: no package.json, so no npm dependencies to audit."
+          elif [ -f package-lock.json ]; then
+            npm audit --audit-level="$LEVEL"
           else
-            echo "No package-lock.json, skipping."
+            echo "::error::package.json has no package-lock.json next to it, so npm audit cannot run. Commit a package-lock.json, or report this repo's lockfile format so this check can learn it."
+            exit 1
           fi
+
+  semgrep:
+    name: code (semgrep)
+    if: ${{ inputs.semgrep }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Install semgrep (pinned)
+        run: pip install --user semgrep==1.175.0
+      - name: Scan
+        # Open-source rule packs; any finding fails the job. Same packs and version as
+        # chiibitsu/nextjs-supabase-template's own semgrep job.
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          semgrep scan --config p/default --config p/secrets --config p/typescript --error
 
   codeql:
     name: code (CodeQL)
