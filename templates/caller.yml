@@ -15,6 +15,6 @@ jobs:
     # Pin a SHA, never a branch. Keep the `# main` hint: Renovate needs it to know what to bump.
     uses: Chiibitsu-Labs/security-checks/.github/workflows/security.yml@<sha-of-security-checks-main> # main
     with:
-      gitleaks: true # false if the repo already runs chiibitsu/gates
+      gitleaks: true # false if the repo already runs Chiibitsu-Labs/gates
       semgrep: true
       codeql: false # true for public repos only

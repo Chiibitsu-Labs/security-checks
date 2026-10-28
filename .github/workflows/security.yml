@@ -5,7 +5,7 @@ on:
   workflow_call:
     inputs:
       gitleaks:
-        description: Run gitleaks. Set false in repos that already scan for secrets (for example via chiibitsu/gates).
+        description: Run gitleaks. Set false in repos that already scan for secrets (for example via Chiibitsu-Labs/gates).
         type: boolean
         default: true
       semgrep:

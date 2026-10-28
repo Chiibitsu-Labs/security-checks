@@ -1,4 +1,4 @@
-# Reference-check exceptions for check_references.py (chiibitsu/gates). Two sections.
+# Reference-check exceptions for check_references.py (Chiibitsu-Labs/gates). Two sections.
 # Section 1 is permanent: paths another repo owns. Section 2, after the `#!debt` marker,
 # is promised-but-unbuilt; the checker fails the run once such a path starts existing.
 
