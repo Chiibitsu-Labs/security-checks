@@ -20,6 +20,10 @@ on:
         description: CodeQL languages, comma separated. Buildless languages only (javascript-typescript, python, ruby, actions).
         type: string
         default: javascript-typescript
+      npm-audit:
+        description: Run the npm audit job. Set false in repos with no package.json, where the job only bills a minute to say so.
+        type: boolean
+        default: true
       audit-level:
         description: npm audit fails at this severity or higher.
         type: string
@@ -57,6 +61,7 @@ jobs:
 
   deps:
     name: dependencies (npm audit)
+    if: ${{ inputs.npm-audit }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
