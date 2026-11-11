@@ -17,4 +17,5 @@ jobs:
     with:
       gitleaks: true # false if the repo already runs Chiibitsu-Labs/gates
       semgrep: true
+      npm-audit: true # false only in a repo with no package.json; the secrets and semgrep jobs fail if one appears
       codeql: false # true for public repos only

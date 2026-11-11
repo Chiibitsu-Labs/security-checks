@@ -42,6 +42,15 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: npm audit switched off only where there is nothing to audit
+        # A skipped job reads as passed, so `npm-audit: false` in a repo that has since gained a
+        # package.json would be a green check that checked nothing. Fail it here instead.
+        if: ${{ !inputs.npm-audit }}
+        run: |
+          if [ -f package.json ]; then
+            echo "::error::npm-audit is false but this repo has a package.json. Set npm-audit: true in the caller."
+            exit 1
+          fi
       - name: Install gitleaks
         run: |
           curl -sSfL -o gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz
@@ -92,6 +101,15 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
+      - name: npm audit switched off only where there is nothing to audit
+        # A skipped job reads as passed, so `npm-audit: false` in a repo that has since gained a
+        # package.json would be a green check that checked nothing. Fail it here instead.
+        if: ${{ !inputs.npm-audit }}
+        run: |
+          if [ -f package.json ]; then
+            echo "::error::npm-audit is false but this repo has a package.json. Set npm-audit: true in the caller."
+            exit 1
+          fi
       - name: Install semgrep (pinned)
         run: pip install --user semgrep==1.175.0
       - name: Scan
